@@ -1,5 +1,5 @@
 {
-  "name": "cloud-todo-list",
+  "name": "todo-list-azure",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
