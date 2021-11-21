@@ -64,7 +64,7 @@ export default class ItemAddForm extends Component {
         }
       );
     } else {
-      this.props.onAdding(label, deadline, priority, important);
+      this.props.onAdding(label, deadline, priority ? priority : 0, important);
       this.setState({
         label: '',
         deadline: 0,

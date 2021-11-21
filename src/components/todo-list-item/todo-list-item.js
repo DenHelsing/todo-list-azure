@@ -40,8 +40,9 @@ class TodoListItem extends Component {
     // console.log(deadline);
     // console.log(typeof deadline);
     // console.log(deadline);
+    // console.log(deadline);
     const daysLeft =
-      deadline === 0
+      deadline <= 0
         ? ''
         : Math.floor((deadline - new Date().getTime() / 1000) / (3600 * 24));
     // console.log(daysLeft);
