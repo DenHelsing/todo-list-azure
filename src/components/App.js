@@ -19,6 +19,7 @@ import ItemStatusFilter from './item-status-filter/item-status-filter.js';
 import '../bootstrap.css';
 import './App.css';
 import firebase from '../firebase';
+import { supabase } from '../client.js';
 export default class App extends Component {
   maxId = 100;
   db = getFirestore(firebase);
@@ -62,6 +63,28 @@ export default class App extends Component {
       label,
       priority,
       deadline: Timestamp.fromMillis(new Date(deadline).getTime() * 1000),
+      important,
+      done,
+      editing
+    };
+  }
+
+  createItemForSupabase({
+    id,
+    label,
+    deadline,
+    priority,
+    important,
+    done,
+    editing
+  }) {
+    // console.log(deadline);
+    priority = parseInt(priority, 10);
+    return {
+      id,
+      label,
+      priority,
+      deadline: new Date(deadline * 1000).toISOString().replace('.000Z', ''),
       important,
       done,
       editing
@@ -191,6 +214,30 @@ export default class App extends Component {
     postData().then(() => console.log('saved'));
   };
 
+  saveToSupabase = () => {
+    const saveData = async () => {
+      const upsertData = this.state.todoData.map((todo) =>
+        this.createItemForSupabase(todo)
+      );
+      console.log('upsertData ', upsertData);
+      const { data, error } = await supabase.from('todos').upsert(upsertData);
+      console.log(error);
+      if (this.state.deletedIDs.length !== 0) {
+        console.log(this.state.deletedIDs);
+        console.log(`${this.state.deletedIDs.join(',')}`);
+        const { data2, error2 } = await supabase
+          .from('todos')
+          .delete()
+          .filter('id', 'in', `(${this.state.deletedIDs.join(',')})`);
+        // .match();
+        console.log(error2);
+      }
+    };
+    // const arr = { 1, 2, 3, 4};
+    // console.log(`${arr}`);
+    saveData().then(() => console.log('saved'));
+  };
+
   handleSearch = (txt) => {
     console.log(txt);
     this.setState({
@@ -238,9 +285,24 @@ export default class App extends Component {
         };
       });
       console.log(todos);
-      this.setState({ todoData: todos });
+      // this.setState({ todoData: todos });
     };
     fetchData();
+    const fetchTODOs = async () => {
+      const data = await supabase.from('todos').select();
+      console.log(data.data);
+      const todos = data.data.map((todo) => {
+        this.maxId = Math.max(this.maxId, parseInt(todo.id, 10));
+        return {
+          ...todo,
+          priority: Number.isNaN(todo.priority) ? '' : todo.priority,
+          deadline: new Date(todo.deadline).getTime() / 1000
+        };
+      });
+      console.log(todos);
+      this.setState({ todoData: todos });
+    };
+    fetchTODOs();
   }
 
   render() {
@@ -274,6 +336,14 @@ export default class App extends Component {
           onClick={this.saveToDatabase}
         >
           Save to cloud
+        </button>
+        <button
+          type="button"
+          className="btn btn-outline-primary saveButton"
+          title="Save to supabase"
+          onClick={this.saveToSupabase}
+        >
+          Save to Supabase
         </button>
         <TodoList
           data={visibleData}
